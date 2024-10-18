@@ -7,6 +7,7 @@ import com.weavechain.zk.bulletproofs.gadgets.MiMC
 import com.weavechain.zk.bulletproofs.gadgets.MiMCStringHashPreImageParams
 import com.weavechain.zk.bulletproofs.gadgets.NumberInListParams
 import com.weavechain.zk.bulletproofs.gadgets.NumberInRangeParams
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -120,6 +121,77 @@ class CompositeApiTest {
         )
 
         assert(match)
+
+    }
+
+    @Test
+    fun `compare size of composite proof vs individual proofs`() {
+
+        val poem = """
+    Hope is the thing with feathers
+    That perches in the soul,
+    And sings the tune without the words,
+    And never stops at all,
+
+    And sweetest in the gale is heard;
+    And sore must be the storm
+    That could abash the little bird
+    That kept so many warm.
+
+    I've heard it in the chillest land,
+    And on the strangest sea;
+    Yet, never, in extremity,
+    It asked a crumb of me.
+""".trimIndent()
+
+        val compositeProof = compositeApi.createProof(
+            DefaultProvingGadget(
+                NumberInRangeParams(10, 100, 31),
+                16
+            ),
+            DefaultProvingGadget(
+                MiMCStringHashPreImageParams.from(poem, 0, MiMC.DEFAULT_MIMC_ROUNDS),
+                poem
+            ),
+            DefaultProvingGadget(
+                NumberInListParams(listOf(10, 20, 30, 40, 50), 31),
+                20
+            )
+        )
+
+        val compositeProofSize = compositeProof.serialize().size
+
+        // Generate individual proofs
+        val proof1 = compositeApi.createProof(
+            DefaultProvingGadget(
+                NumberInRangeParams(10, 100, 31),
+                16
+            )
+        ).serialize().size
+
+        val proof2 = compositeApi.createProof(
+            DefaultProvingGadget(
+                MiMCStringHashPreImageParams.from(poem, 0, MiMC.DEFAULT_MIMC_ROUNDS),
+                poem
+            )
+        ).serialize().size
+
+        val proof3 = compositeApi.createProof(
+            DefaultProvingGadget(
+                NumberInListParams(listOf(10, 20, 30, 40, 50), 31),
+                20
+            )
+        ).serialize().size
+
+        val totalIndividualProofsSize = proof1 + proof2 + proof3
+
+        // Print sizes to the test log
+        println("Composite proof size: $compositeProofSize bytes")
+        println("Total individual proofs size: $totalIndividualProofsSize bytes")
+
+        assert(compositeProofSize < totalIndividualProofsSize)
+        assertEquals(1891, compositeProofSize)
+        assertEquals(3689, totalIndividualProofsSize)
     }
 
 }

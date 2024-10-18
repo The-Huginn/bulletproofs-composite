@@ -68,7 +68,7 @@ object GadgetRegistry {
 
         suggestedGenerators[NumbersInRangeParams::class.java] = 512
         suggestedGenerators[MiMCHashPreImageParams::class.java] = 1024
-        suggestedGenerators[MiMCStringHashPreImageParams::class.java] = 4096
+        suggestedGenerators[MiMCStringHashPreImageParams::class.java] = 8192
     }
 
     fun <T: GadgetParams> getGadgetType(params: T) = registry[params::class.java]
